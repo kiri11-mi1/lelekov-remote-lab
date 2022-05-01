@@ -5,54 +5,56 @@ import numpy as np
 
 class Plotter:
     """Отображение рисунков"""
-    def __init__(self, figNum=None, maxPoints=300, figSize=(6,6)):
-        if figNum is None:
-            self.figure, axes = plt.subplots(3, 1, figsize=figSize)
-            self.figNum = plt.gcf().number
+    def __init__(self, fig_num=None, max_points=300, fig_size=(6,6)):
+        if fig_num is None:
+            self.figure, axes = plt.subplots(3, 1, figsize=fig_size)
+            self.fig_num = plt.gcf().number
         else:
-            self.figure = plt.figure(num=figNum, clear=True)
+            self.figure = plt.figure(num=fig_num, clear=True)
             axes = self.figure.subplots(3, 1)
-            self.figNum = figNum
-        #self.figure.tight_layout()
+            self.fig_num = fig_num
 
         # init data, add empty lines with colors
         self.lines = {}
         self.axes = {}
-        self.data = {'t':[0., 0.]} # добавляем два пустых отсчёта (c NaN), для замеров dt
+
+        # добавляем два пустых отсчёта (c NaN), для замеров dt
+        self.data = {'t': [0., 0.]}
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
         self.keys = ['t', 'theta', 'omega', 'u']
         dimension = ['s', 'deg', 'deg/s', '-1..1']
         for (key, ax, c, dim) in zip(self.keys[1:], axes, colors, dimension[1:]):
             self.axes[key] = ax
-            ax.grid(b=True) # сетку на всех осях
+            ax.grid(b=True)
             self.data[key] = [np.nan, np.nan]
             self.lines[key], = self.axes[key].plot(
                 self.data['t'],
                 self.data[key],
                 color=c
-            ) # и пустую линию
-            self.axes[key].set_ylabel(key+' ['+dim+']') # обозначения на осях
+            )
+            # обозначения на осях
+            self.axes[key].set_ylabel(key+' ['+dim+']')
         self.axes['theta'].set_title('dt = %5.2f ms'%(0.,))
-        self.maxPoints = maxPoints
+        self.max_points = max_points
 
-        self.stopNow = False
-        self.axButton = plt.axes([0.7, 0.895, 0.2, 0.05])
-        self.button = Button(self.axButton, 'Stop') # Создание кнопки
-        self.button.on_clicked(self.onButtonClicked)
+        self.stop_now = False
+        self.ax_button = plt.axes([0.7, 0.895, 0.2, 0.05])
+        self.button = Button(self.ax_button, 'Stop')
+        self.button.on_clicked(self.on_button_clicked)
 
     def on_button_clicked(self, event):
         """ обработчик клика """
-        self.stopNow = True
+        self.stop_now = True
 
-    def add_data(self, t, ThetaOmegaU):
+    def add_data(self, t, theta_omega_u):
         ttwu = [t]
-        ttwu.extend(ThetaOmegaU)
+        ttwu.extend(theta_omega_u)
         for (key, d) in zip(self.keys, ttwu):
             self.data[key].append(d)
-            if len(self.data[key])>self.maxPoints: # cut len to maxPoints
+            if len(self.data[key]) > self.max_points:
                 self.data[key] = self.data[key][1:]
 
-        for key in self.keys[1:]: # updating data values
+        for key in self.keys[1:]:
             self.lines[key].set_xdata(self.data['t'])
             self.lines[key].set_ydata(self.data[key])
             self.axes[key].set_xlim(right=self.data['t'][-1],
@@ -65,15 +67,17 @@ class Plotter:
                 bottom = 0
             self.axes[key].set_ylim(top=top, bottom=bottom)
 
-        self.axes['theta'].set_title('dt = %5.2f ms'%(1000*np.mean(np.diff(self.data['t'])),)) #(self.data['t'][-1]-self.data['t'][-2])
-        self.figure.canvas.draw() # drawing updated values
+        self.axes['theta'].set_title('dt = %5.2f ms' % (1000*np.mean(np.diff(self.data['t'])),)) #(self.data['t'][-1]-self.data['t'][-2])
+        self.figure.canvas.draw()
         self.figure.canvas.flush_events()
 
     def get_data(self):
         return self.data
 
     def __enter__(self):
+        plt.ion()
+        plt.show()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        plt.close(self.figNum)
+        plt.close(self.fig_num)
