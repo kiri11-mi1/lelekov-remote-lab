@@ -22,28 +22,29 @@ class Communicator:
 
         if host_ip is None:
             self.host_addr = (self.get_ip(), self.host_addr[1])
-        self.data_NaN = [np.NaN for _ in range(13)] #вернём в случае пропуска
+        self.data_NaN = [np.NaN for _ in range(13)]
 
     @staticmethod
     def get_ip():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('192.168.1.1', 1))  # doesn't even have to be reachable
-        IP = s.getsockname()[0]
+        ip = s.getsockname()[0]
         s.close()
-        return IP
+        return ip
 
     def connect(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.server.bind(self.bind_addr)  # Привязка адреса и порта к сокету.
-        print('[+] Ready to receive MPU data on %s:%d' % (self.bind_addr[0],
-                                                         self.bind_addr[1]))
+        # Привязка адреса и порта к сокету.
+        self.server.bind(self.bind_addr)
+        print(f'[+] Ready to receive MPU data on {self.bind_addr[0]}:{self.bind_addr[1]}')
         self.server.connect(self.host_addr)
-        print('[+] Connected to %s:%d' % (self.host_addr[0], self.host_addr[1]))
+        print(f'[+] Connected to {self.host_addr[0]}:{self.host_addr[1]}')
         self.server.settimeout(0.25)
 
     def control(self, u):
         msg = struct.pack('f', u)
-        self.server.send(msg) # отправляем запрос
+        # отправляем запрос
+        self.server.send(msg)
 
     def measure(self):
         try:
